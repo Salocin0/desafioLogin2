@@ -56,6 +56,62 @@ export function iniPassport() {
       }
     )
   );
+
+  passport.use(
+    'login',
+    new LocalStrategy({ usernameField: 'email' }, async (username, password, done) => {
+        if (!username || !password) {
+            return done(null, false);
+        }
+        try {
+        const user = await UserModel.findOne({ email: username });
+        if (!user) {
+          console.log('User Not Found with username (email) ' + username);
+          return done(null, false);
+        }
+        if (!isValidPassword(password, user.password)) {
+          console.log('Invalid Password');
+          return done(null, false);
+        }
+        return done(null, user);
+      } catch (err) {
+        return done(err);
+      }
+    })
+  );
+
+  passport.use(
+    'register',
+    new LocalStrategy(
+      {
+        passReqToCallback: true,
+        usernameField: 'email',
+      },
+      async (req, username, password, done) => {
+        try {
+          const { firstName, lastName, age, email, password,rol="Usuario" } = req.body;
+          if (!firstName || !lastName || !age || !email || !password) {
+            return res.status(400).render('error-page', { msg: 'faltan datos' });
+          }
+          let user = await UserModel.findOne({ email: username });
+          if (user) {
+            console.log('User already exists');
+            return done(null, false);
+          }
+        let newuser = await UserModel.create({ firstName, lastName, age, email, password:createHash(password),rol});
+        console.log(newuser);
+        console.log('User Registration succesful');
+        return done(null, newuser);
+          
+        } catch (e) {
+          console.log('Error in register');
+          console.log(e);
+          return done(e);
+        }
+      }
+    )
+  );
+
   passport.serializeUser((user, done) => {
     done(null, user._id);
   });
