@@ -16,11 +16,15 @@ import { routerVistaProducts } from "./routes/products.vista.router.js";
 import { routerVistaCart } from "./routes/cart.vista.router.js";
 import { viewsRouter } from "./routes/views.router.js"
 import { loginRouter } from "./routes/login.router.js"
+import passport from 'passport';
+import { iniPassport } from "./config/passport.config.js";
 
 const app = express();
 const port = 8080;
 
 connectMongo();
+
+
 
 app.use(express.urlencoded({extended:true}))
 app.use(express.json());
@@ -33,6 +37,10 @@ app.use(
     saveUninitialized: true,
   })
 );
+
+iniPassport();
+app.use(passport.initialize());
+app.use(passport.session());
 
 app.engine("handlebars", handlebars.engine());
 app.set("views", __dirname + "/views");
@@ -47,6 +55,18 @@ app.use("/api/users",routerUsers);
 app.use("/vista/products", routerVistaProducts)
 app.use('/', viewsRouter);
 app.use('/api/sessions', loginRouter);
+app.get("/api/sessions/github", passport.authenticate("github",{scope:["user:email"]}))
+
+app.get('/api/sessions/githubcallback', passport.authenticate('github', { failureRedirect: '/error-autentificacion' }), (req, res) => {
+  req.session.firstName = req.user.firstName;
+  req.session.email = req.user.email;
+  res.clearCookie('userId')
+  res.cookie('userId', req.user._id, { maxAge: 3600000 });
+  res.redirect('/vista/products');
+});
+app.get("/error-autentificacion",(req,res)=>{
+  return res.status(400).render("error-page",{ msg: 'error al loguear' })
+})
 app.get('*', (req, res) => {
   return res.status(404).json({
     status: "Error",

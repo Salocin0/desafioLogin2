@@ -10,6 +10,10 @@ const schema = new Schema({
     type: String,
     max: 100,
   },
+  rol: {
+    type: String,
+    max: 100,
+  },
   password: {
     type: String,
     max: 100,
@@ -19,9 +23,6 @@ const schema = new Schema({
     required: true,
     max: 100,
     unique: true,
-  },
-  age: {
-    type: Number,
   },
 });
 schema.plugin(monsoosePaginate);
